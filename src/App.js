@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import MenuIcon from "@material-ui/icons/Menu";
+import SettingsIcon from "@material-ui/icons/Settings";
+import BarChartIcon from "@material-ui/icons/BarChart";
+import LibraryBooksOutlinedIcon from "@material-ui/icons/LibraryBooksOutlined";
+import HomeOutlinedIcon from "@material-ui/icons/HomeOutlined";
 import {
   AppBar,
   Button,
@@ -15,159 +19,19 @@ import {
 } from "@material-ui/core";
 import { Link, Route } from "react-router-dom";
 import { auth } from "./firebase";
-
-export function SignIn(props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(u => {
-      if (u) {
-        props.history.push("/app");
-      }
-      // do something
-    });
-
-    return unsubscribe;
-  }, [props.history]);
-
-  const handleSignIn = () => {
-    auth
-      .signInWithEmailAndPassword(email, password)
-      .then(() => {})
-      .catch(error => {
-        alert(error.message);
-      });
-  };
-
-  return (
-    <div>
-      <AppBar position="static" color="primary">
-        <Toolbar>
-          <Typography variant="h6" color="inherit">
-            Sign In
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <Paper style={{ width: "480px", marginTop: "50px", padding: "30px" }}>
-          <TextField
-            placeholder={"Email"}
-            fullWidth={true}
-            value={email}
-            onChange={e => {
-              setEmail(e.target.value);
-            }}
-          />
-          <TextField
-            type={"password"}
-            placeholder="Password"
-            fullWidth={true}
-            style={{ marginTop: "30px" }}
-            value={password}
-            onChange={e => {
-              setPassword(e.target.value);
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "30px"
-            }}
-          >
-            <Typography>
-              Don't have an account? <Link to="/signup">Sign up!</Link>
-            </Typography>
-            <Button color="primary" variant="contained" onClick={handleSignIn}>
-              Sign in
-            </Button>
-          </div>
-        </Paper>
-      </div>
-    </div>
-  );
-}
-
-export function SignUp(props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(u => {
-      if (u) {
-        props.history.push("/app");
-      }
-      // do something
-    });
-
-    return unsubscribe;
-  }, [props.history]);
-
-  const handleSignUp = () => {
-    auth
-      .createUserWithEmailAndPassword(email, password)
-      .then(() => {})
-      .catch(error => {
-        alert(error.message);
-      });
-  };
-
-  return (
-    <div>
-      <AppBar position="static" color="primary">
-        <Toolbar>
-          <Typography variant="h6" color="inherit">
-            Sign Up
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <Paper style={{ width: "480px", marginTop: "50px", padding: "30px" }}>
-          <TextField
-            placeholder={"Email"}
-            fullWidth={true}
-            value={email}
-            onChange={e => {
-              setEmail(e.target.value);
-            }}
-          />
-          <TextField
-            type={"password"}
-            placeholder="Password"
-            fullWidth={true}
-            style={{ marginTop: "30px" }}
-            value={password}
-            onChange={e => {
-              setPassword(e.target.value);
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "30px"
-            }}
-          >
-            <Typography>
-              Already have an account? <Link to="/">Sign in!</Link>
-            </Typography>
-            <Button color="primary" variant="contained" onClick={handleSignUp}>
-              Sign up
-            </Button>
-          </div>
-        </Paper>
-      </div>
-    </div>
-  );
-}
+import AddNewEntry from "./AddNewEntry";
+import RecentEntries from "./RecentEntries";
+import Entries from "./Entries";
+import Statistics from "./Statistics";
+import Settings from "./Settings";
+import "./App.css";
 
 export function App(props) {
   const [drawer_open, setDrawerOpen] = useState(false);
   const [user, setUser] = useState(null);
+  var body = document.getElementById("body");
 
+  // catching auth state
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(u => {
       if (u) {
@@ -180,6 +44,18 @@ export function App(props) {
     return unsubscribe;
   }, [props.history]);
 
+  // using Local Storage for background image
+  useEffect(() => {
+    const img = localStorage.getItem("bg");
+    if (img) {
+      body.style.backgroundImage = `url(${img})`;
+    } else {
+      body.style.backgroundImage =
+        "url('https://images.unsplash.com/photo-1520451214409-ba3eed10dc52?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1500&q=80')";
+    }
+  }, []);
+
+  // user signing out
   const handleSignOut = () => {
     auth
       .signOut()
@@ -191,13 +67,14 @@ export function App(props) {
       });
   };
 
+  // catch user trying to get into app without signing in
   if (!user) {
     return <div />;
   }
 
   return (
     <div>
-      <AppBar position="static" color="primary">
+      <AppBar position="static" color="inherit">
         <Toolbar>
           <IconButton
             color="inherit"
@@ -208,15 +85,48 @@ export function App(props) {
             <MenuIcon />
           </IconButton>
           <Typography
+            id="app-bar-home"
             variant="h6"
             color="inherit"
             style={{ flexGrow: 1, marginLeft: "30px" }}
+            onClick={() => {
+              props.history.push("/app/home");
+            }}
           >
-            My App
+            My Journal
           </Typography>
-          <Typography color="inherit" style={{ marginRight: "30px" }}>
-            Hi! {user.email}
-          </Typography>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              props.history.push("/app/home");
+            }}
+          >
+            <HomeOutlinedIcon />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              props.history.push("/app/entries");
+            }}
+          >
+            <LibraryBooksOutlinedIcon />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              props.history.push("/app/statistics");
+            }}
+          >
+            <BarChartIcon />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              props.history.push("/app/settings");
+            }}
+          >
+            <SettingsIcon />
+          </IconButton>
           <Button color="inherit" onClick={handleSignOut}>
             Sign out
           </Button>
@@ -229,11 +139,65 @@ export function App(props) {
         }}
       >
         <List>
-          <ListItem button>
+          <ListItem
+            button
+            onClick={() => {
+              props.history.push("/app/home");
+              setDrawerOpen(false);
+            }}
+          >
             <ListItemText primary="Home" />
+          </ListItem>
+          <ListItem
+            button
+            onClick={() => {
+              props.history.push("/app/entries");
+              setDrawerOpen(false);
+            }}
+          >
+            <ListItemText primary="All of My Entries" />
+          </ListItem>
+          <ListItem
+            button
+            onClick={() => {
+              props.history.push("/app/statistics");
+              setDrawerOpen(false);
+            }}
+          >
+            <ListItemText primary="My Statistics" />
+          </ListItem>
+          <ListItem
+            button
+            onClick={() => {
+              props.history.push("/app/settings");
+              setDrawerOpen(false);
+            }}
+          >
+            <ListItemText primary="Settings" />
           </ListItem>
         </List>
       </Drawer>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "inline",
+          justifyContent: "space-evenly"
+        }}
+      >
+        <Route path="/app/home">
+          <RecentEntries user={user} />
+          <AddNewEntry user={user} />
+        </Route>
+        <Route path="/app/entries">
+          <Entries user={user} />
+        </Route>
+        <Route path="/app/statistics">
+          <Statistics user={user} />
+        </Route>
+        <Route path="/app/settings">
+          <Settings user={user} />
+        </Route>
+      </div>
     </div>
   );
 }
